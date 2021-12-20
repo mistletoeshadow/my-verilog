@@ -10,4 +10,4 @@
 ### 《小梅哥Xilinx FPGA自学教程》
 ### 小梅哥 02A_【学习教材】FPGA系统设计与验证实战指南_V3.0
 # 
-### email: mistletoe65@163.com
+### email: mistletoe65@163.com or mistletoe65@nuaa.edu.cn
