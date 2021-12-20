@@ -3,24 +3,24 @@
 module uart_byte_tx(
 	clk,
 	rst_n,
-	data_byte,
-	send_en,
-	baud_set,
+	i_TXD_Din,
+	i_TXD_En,
+	i_TXD_Baud,
 	
-	tx,
-	tx_done,
-	uart_state
+	o_TXD_Tx,
+	o_TXD_Done,
+	o_TXD_State
 );
 
 	input clk;
 	input rst_n;
-	input [7:0]data_byte;
-	input send_en;
-	input [2:0]baud_set;
+	input [7:0]i_TXD_Din;
+	input i_TXD_En;
+	input [2:0]i_TXD_Baud;
 	
-	output reg tx;
-	output reg tx_done;
-	output reg uart_state;
+	output reg o_TXD_Tx;
+	output reg o_TXD_Done;
+	output reg o_TXD_State;
 	
 	reg bps_clk;	//波特率时钟
 	
@@ -37,19 +37,19 @@ module uart_byte_tx(
 	
 	always@(posedge clk or negedge rst_n)
 	if(!rst_n)
-		uart_state <= 1'b0;
-	else if(send_en)
-		uart_state <= 1'b1;
+		o_TXD_State <= 1'b0;
+	else if(i_TXD_En)
+		o_TXD_State <= 1'b1;
 	else if(bps_cnt == 4'd11)
-		uart_state <= 1'b0;
+		o_TXD_State <= 1'b0;
 	else
-		uart_state <= uart_state;
+		o_TXD_State <= o_TXD_State;
 	
 	always@(posedge clk or negedge rst_n)
 	if(!rst_n)
 		r_data_byte <= 8'd0;
-	else if(send_en)
-		r_data_byte <= data_byte;
+	else if(i_TXD_En)
+		r_data_byte <= i_TXD_Din;
 	else
 		r_data_byte <= r_data_byte;
 	
@@ -57,7 +57,7 @@ module uart_byte_tx(
 	if(!rst_n)
 		bps_DR <= 16'd5207;
 	else begin
-		case(baud_set)
+		case(i_TXD_Baud)
 			0:bps_DR <= 16'd5207;
 			1:bps_DR <= 16'd2603;
 			2:bps_DR <= 16'd1301;
@@ -71,7 +71,7 @@ module uart_byte_tx(
 	always@(posedge clk or negedge rst_n)
 	if(!rst_n)
 		div_cnt <= 16'd0;
-	else if(uart_state)begin
+	else if(o_TXD_State)begin
 		if(div_cnt == bps_DR)
 			div_cnt <= 16'd0;
 		else
@@ -102,29 +102,29 @@ module uart_byte_tx(
 		
 	always@(posedge clk or negedge rst_n)
 	if(!rst_n)
-		tx_done <= 1'b0;
+		o_TXD_Done <= 1'b0;
 	else if(bps_cnt == 4'd11)
-		tx_done <= 1'b1;
+		o_TXD_Done <= 1'b1;
 	else
-		tx_done <= 1'b0;
+		o_TXD_Done <= 1'b0;
 		
 	always@(posedge clk or negedge rst_n)
 	if(!rst_n)
-		tx <= 1'b1;
+		o_TXD_Tx <= 1'b1;
 	else begin
 		case(bps_cnt)
-			0:tx <= 1'b1;
-			1:tx <= START_BIT;
-			2:tx <= r_data_byte[0];
-			3:tx <= r_data_byte[1];
-			4:tx <= r_data_byte[2];
-			5:tx <= r_data_byte[3];
-			6:tx <= r_data_byte[4];
-			7:tx <= r_data_byte[5];
-			8:tx <= r_data_byte[6];
-			9:tx <= r_data_byte[7];
-			10:tx <= STOP_BIT;
-			default:tx <= 1'b1;
+			0:o_TXD_Tx <= 1'b1;
+			1:o_TXD_Tx <= START_BIT;
+			2:o_TXD_Tx <= r_data_byte[0];
+			3:o_TXD_Tx <= r_data_byte[1];
+			4:o_TXD_Tx <= r_data_byte[2];
+			5:o_TXD_Tx <= r_data_byte[3];
+			6:o_TXD_Tx <= r_data_byte[4];
+			7:o_TXD_Tx <= r_data_byte[5];
+			8:o_TXD_Tx <= r_data_byte[6];
+			9:o_TXD_Tx <= r_data_byte[7];
+			10:o_TXD_Tx <= STOP_BIT;
+			default:o_TXD_Tx <= 1'b1;
 		endcase
 	end	
 

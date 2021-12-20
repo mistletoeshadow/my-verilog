@@ -1,26 +1,26 @@
 `timescale 1ns/1ps
 
 module uart_byte_tx(
-	Clk,
-	Rst_n,
-	data_byte,
-	send_en,
-	baud_set,
+	clk,
+	rst_n,
+	i_TXD_Din,
+	i_TXD_En,
+	i_TXD_Baud,
 	
-	Rs232_Tx,
-	Tx_Done,
-	uart_state
+	o_TXD_Tx,
+	o_TXD_Done,
+	o_TXD_State
 );
 
-	input Clk;
-	input Rst_n;
-	input [7:0]data_byte;
-	input send_en;
-	input [2:0]baud_set;
+	input clk;
+	input rst_n;
+	input [7:0]i_TXD_Din;
+	input i_TXD_En;
+	input [2:0]i_TXD_Baud;
 	
-	output reg Rs232_Tx;
-	output reg Tx_Done;
-	output reg uart_state;
+	output reg o_TXD_Tx;
+	output reg o_TXD_Done;
+	output reg o_TXD_State;
 	
 	reg bps_clk;	//波特率时钟
 	
@@ -35,29 +35,29 @@ module uart_byte_tx(
 	localparam START_BIT = 1'b0;
 	localparam STOP_BIT = 1'b1;
 	
-	always@(posedge Clk or negedge Rst_n)
-	if(!Rst_n)
-		uart_state <= 1'b0;
-	else if(send_en)
-		uart_state <= 1'b1;
-	else if(Tx_Done)
-		uart_state <= 1'b0;
+	always@(posedge clk or negedge rst_n)
+	if(!rst_n)
+		o_TXD_State <= 1'b0;
+	else if(i_TXD_En)
+		o_TXD_State <= 1'b1;
+	else if(bps_cnt == 4'd11)
+		o_TXD_State <= 1'b0;
 	else
-		uart_state <= uart_state;
+		o_TXD_State <= o_TXD_State;
 	
-	always@(posedge Clk or negedge Rst_n)
-	if(!Rst_n)
+	always@(posedge clk or negedge rst_n)
+	if(!rst_n)
 		r_data_byte <= 8'd0;
-	else if(send_en)
-		r_data_byte <= data_byte;
+	else if(i_TXD_En)
+		r_data_byte <= i_TXD_Din;
 	else
 		r_data_byte <= r_data_byte;
 	
-	always@(posedge Clk or negedge Rst_n)
-	if(!Rst_n)
+	always@(posedge clk or negedge rst_n)
+	if(!rst_n)
 		bps_DR <= 16'd5207;
 	else begin
-		case(baud_set)
+		case(i_TXD_Baud)
 			0:bps_DR <= 16'd5207;
 			1:bps_DR <= 16'd2603;
 			2:bps_DR <= 16'd1301;
@@ -68,10 +68,10 @@ module uart_byte_tx(
 	end	
 	
 	//counter
-	always@(posedge Clk or negedge Rst_n)
-	if(!Rst_n)
+	always@(posedge clk or negedge rst_n)
+	if(!rst_n)
 		div_cnt <= 16'd0;
-	else if(uart_state)begin
+	else if(o_TXD_State)begin
 		if(div_cnt == bps_DR)
 			div_cnt <= 16'd0;
 		else
@@ -81,8 +81,8 @@ module uart_byte_tx(
 		div_cnt <= 16'd0;
 	
 	// bps_clk gen
-	always@(posedge Clk or negedge Rst_n)
-	if(!Rst_n)
+	always@(posedge clk or negedge rst_n)
+	if(!rst_n)
 		bps_clk <= 1'b0;
 	else if(div_cnt == 16'd1)
 		bps_clk <= 1'b1;
@@ -90,43 +90,42 @@ module uart_byte_tx(
 		bps_clk <= 1'b0;
 	
 	//bps counter
-	always@(posedge Clk or negedge Rst_n)
-	if(!Rst_n)	
+	always@(posedge clk or negedge rst_n)
+	if(!rst_n)	
 		bps_cnt <= 4'd0;
-	else if(Tx_Done)
+	else if(bps_cnt == 4'd11)
 		bps_cnt <= 4'd0;
 	else if(bps_clk)
 		bps_cnt <= bps_cnt + 1'b1;
 	else
 		bps_cnt <= bps_cnt;
 		
-	always@(posedge Clk or negedge Rst_n)
-	if(!Rst_n)
-		Tx_Done <= 1'b0;
+	always@(posedge clk or negedge rst_n)
+	if(!rst_n)
+		o_TXD_Done <= 1'b0;
 	else if(bps_cnt == 4'd11)
-		Tx_Done <= 1'b1;
+		o_TXD_Done <= 1'b1;
 	else
-		Tx_Done <= 1'b0;
+		o_TXD_Done <= 1'b0;
 		
-	always@(posedge Clk or negedge Rst_n)
-	if(!Rst_n)
-		Rs232_Tx <= 1'b1;
+	always@(posedge clk or negedge rst_n)
+	if(!rst_n)
+		o_TXD_Tx <= 1'b1;
 	else begin
 		case(bps_cnt)
-			0:Rs232_Tx <= 1'b1;
-			1:Rs232_Tx <= START_BIT;
-			2:Rs232_Tx <= r_data_byte[0];
-			3:Rs232_Tx <= r_data_byte[1];
-			4:Rs232_Tx <= r_data_byte[2];
-			5:Rs232_Tx <= r_data_byte[3];
-			6:Rs232_Tx <= r_data_byte[4];
-			7:Rs232_Tx <= r_data_byte[5];
-			8:Rs232_Tx <= r_data_byte[6];
-			9:Rs232_Tx <= r_data_byte[7];
-			10:Rs232_Tx <= STOP_BIT;
-			default:Rs232_Tx <= 1'b1;
+			0:o_TXD_Tx <= 1'b1;
+			1:o_TXD_Tx <= START_BIT;
+			2:o_TXD_Tx <= r_data_byte[0];
+			3:o_TXD_Tx <= r_data_byte[1];
+			4:o_TXD_Tx <= r_data_byte[2];
+			5:o_TXD_Tx <= r_data_byte[3];
+			6:o_TXD_Tx <= r_data_byte[4];
+			7:o_TXD_Tx <= r_data_byte[5];
+			8:o_TXD_Tx <= r_data_byte[6];
+			9:o_TXD_Tx <= r_data_byte[7];
+			10:o_TXD_Tx <= STOP_BIT;
+			default:o_TXD_Tx <= 1'b1;
 		endcase
 	end	
 
 endmodule
-

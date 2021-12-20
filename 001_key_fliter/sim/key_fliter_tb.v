@@ -6,7 +6,7 @@
 //
 // Create Date:   21:22:15 08/26/2021
 // Design Name:   key_fliter
-// Module Name:   E:/FPGA/my.verilog.learn/key_fliter/sim/tb/key_fliter_tb.v
+// Module Name:   E:/FPGA/my.verilog.learn/key_fliter/sim/tb/key_filter_tb.v
 // Project Name:  key_fliter
 // Target Device:  
 // Tool versions:  
@@ -22,7 +22,7 @@
 // 
 ////////////////////////////////////////////////////////////////////////////////
 
-module key_fliter_tb;
+module key_filter_tb;
 
 	// Inputs
 	reg clk;
@@ -34,14 +34,13 @@ module key_fliter_tb;
 	wire key_flag;
 
 	// Instantiate the Unit Under Test (UUT)
-	key_fliter uut0 (
+	key_filter uut0 (
 		.clk(clk), 
 		.rst_n(rst_n), 
-		.key_in(key_in), 
-		.key_state(key_state), 
-		.key_flag(key_flag)
+		.i_Key(key_in), 
+		.o_KEY_State(key_state), 
+		.o_KEY_flag(key_flag)
 	);
-
 	key_model u_key_model(.key(key_in));
 
 	initial clk = 1;
@@ -54,7 +53,5 @@ module key_fliter_tb;
 
 		$stop;
 	end
-
-     
 endmodule
 

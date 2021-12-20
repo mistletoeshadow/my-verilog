@@ -5,22 +5,22 @@
 
 `timescale 1ns / 1ps
 module uart_byte_rx(
-	Clk,
-	Rst_n,
-	baud_set,
-	Rs232_Rx,
+	clk,
+	rst_n,
+	i_RXD_Baud,
+	i_RXD_Rx,
 	
-	data_byte,
-	Rx_Done
+	o_RXD_Dout,
+	o_RXD_Done
 );
 
-	input Clk;
-	input Rst_n;
-	input [2:0]baud_set;
-	input Rs232_Rx;
+	input clk;
+	input rst_n;
+	input [2:0]i_RXD_Baud;
+	input i_RXD_Rx;
 	
-	output reg [7:0] data_byte;
-	output reg Rx_Done;
+	output reg [7:0] o_RXD_Dout;
+	output reg o_RXD_Done;
 	
 	reg s0_Rs232_Rx,s1_Rs232_Rx;//同步寄存器
 	
@@ -40,19 +40,19 @@ module uart_byte_rx(
 	wire nedege;
 	
 	//同步寄存器，消除亚稳态
-	always@(posedge Clk or negedge Rst_n)
-	if(!Rst_n)begin
+	always@(posedge clk or negedge rst_n)
+	if(!rst_n)begin
 		s0_Rs232_Rx <= 1'b0;
 		s1_Rs232_Rx <= 1'b0;	
 	end
 	else begin
-		s0_Rs232_Rx <= Rs232_Rx;
+		s0_Rs232_Rx <= i_RXD_Rx;
 		s1_Rs232_Rx <= s0_Rs232_Rx;	
 	end
 	
 	//数据寄存器
-	always@(posedge Clk or negedge Rst_n)
-	if(!Rst_n)begin
+	always@(posedge clk or negedge rst_n)
+	if(!rst_n)begin
 		tmp0_Rs232_Rx <= 1'b0;
 		tmp1_Rs232_Rx <= 1'b0;	
 	end
@@ -63,11 +63,11 @@ module uart_byte_rx(
 	
 	assign nedege = !tmp0_Rs232_Rx & tmp1_Rs232_Rx;
 	
-	always@(posedge Clk or negedge Rst_n)
-	if(!Rst_n)
+	always@(posedge clk or negedge rst_n)
+	if(!rst_n)
 		bps_DR <= 16'd324;
 	else begin
-		case(baud_set)
+		case(i_RXD_Baud)
 			0:bps_DR <= 16'd324;
 			1:bps_DR <= 16'd162;
 			2:bps_DR <= 16'd80;
@@ -78,8 +78,8 @@ module uart_byte_rx(
 	end
 	
 	//counter
-	always@(posedge Clk or negedge Rst_n)
-	if(!Rst_n)
+	always@(posedge clk or negedge rst_n)
+	if(!rst_n)
 		div_cnt <= 16'd0;
 	else if(uart_state)begin
 		if(div_cnt == bps_DR)
@@ -91,8 +91,8 @@ module uart_byte_rx(
 		div_cnt <= 16'd0;
 		
 	// bps_clk gen
-	always@(posedge Clk or negedge Rst_n)
-	if(!Rst_n)
+	always@(posedge clk or negedge rst_n)
+	if(!rst_n)
 		bps_clk <= 1'b0;
 	else if(div_cnt == 16'd1)
 		bps_clk <= 1'b1;
@@ -100,8 +100,8 @@ module uart_byte_rx(
 		bps_clk <= 1'b0;
 	
 	//bps counter
-	always@(posedge Clk or negedge Rst_n)
-	if(!Rst_n)	
+	always@(posedge clk or negedge rst_n)
+	if(!rst_n)	
 		bps_cnt <= 8'd0;
 	else if(bps_cnt == 8'd159 | (bps_cnt == 8'd12 && (START_BIT > 2)))
 		bps_cnt <= 8'd0;
@@ -110,39 +110,39 @@ module uart_byte_rx(
 	else
 		bps_cnt <= bps_cnt;
 
-	always@(posedge Clk or negedge Rst_n)
-	if(!Rst_n)
-		Rx_Done <= 1'b0;
+	always@(posedge clk or negedge rst_n)
+	if(!rst_n)
+		o_RXD_Done <= 1'b0;
 	else if(bps_cnt == 8'd159)
-		Rx_Done <= 1'b1;
+		o_RXD_Done <= 1'b1;
 	else
-		Rx_Done <= 1'b0;
+		o_RXD_Done <= 1'b0;
 		
-//	always@(posedge Clk or negedge Rst_n)
-//	if(!Rst_n)
-//		data_byte <= 8'd0;
+//	always@(posedge clk or negedge rst_n)
+//	if(!rst_n)
+//		o_RXD_Dout <= 8'd0;
 //	else if(bps_cnt == 8'd159)
-//		data_byte <= tmp_data_byte;
+//		o_RXD_Dout <= tmp_data_byte;
 //	else
-//		data_byte <= data_byte;
+//		o_RXD_Dout <= o_RXD_Dout;
 		
 		
-	always@(posedge Clk or negedge Rst_n)
-	if(!Rst_n)
-		data_byte <= 8'd0;
+	always@(posedge clk or negedge rst_n)
+	if(!rst_n)
+		o_RXD_Dout <= 8'd0;
 	else if(bps_cnt == 8'd159)begin
-		data_byte[0] <= r_data_byte[0][2];
-		data_byte[1] <= r_data_byte[1][2];
-		data_byte[2] <= r_data_byte[2][2];
-		data_byte[3] <= r_data_byte[3][2];
-		data_byte[4] <= r_data_byte[4][2];
-		data_byte[5] <= r_data_byte[5][2];
-		data_byte[6] <= r_data_byte[6][2];
-		data_byte[7] <= r_data_byte[7][2];
+		o_RXD_Dout[0] <= r_data_byte[0][2];
+		o_RXD_Dout[1] <= r_data_byte[1][2];
+		o_RXD_Dout[2] <= r_data_byte[2][2];
+		o_RXD_Dout[3] <= r_data_byte[3][2];
+		o_RXD_Dout[4] <= r_data_byte[4][2];
+		o_RXD_Dout[5] <= r_data_byte[5][2];
+		o_RXD_Dout[6] <= r_data_byte[6][2];
+		o_RXD_Dout[7] <= r_data_byte[7][2];
 	end	
 		
-	always@(posedge Clk or negedge Rst_n)
-	if(!Rst_n)begin
+	always@(posedge clk or negedge rst_n)
+	if(!rst_n)begin
 		START_BIT <= 3'd0;
 		r_data_byte[0] <= 3'd0;
 		r_data_byte[1] <= 3'd0;
@@ -194,12 +194,12 @@ module uart_byte_rx(
 		endcase
 	end
 	
-	always@(posedge Clk or negedge Rst_n)
-	if(!Rst_n)
+	always@(posedge clk or negedge rst_n)
+	if(!rst_n)
 		uart_state <= 1'b0;
 	else if(nedege)
 		uart_state <= 1'b1;
-	else if(Rx_Done || (bps_cnt == 8'd12 && (START_BIT > 2)))
+	else if(o_RXD_Done || (bps_cnt == 8'd12 && (START_BIT > 2)))
 		uart_state <= 1'b0;
 	else
 		uart_state <= uart_state;		

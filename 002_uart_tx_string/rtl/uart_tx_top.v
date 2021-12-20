@@ -23,21 +23,21 @@ module uart_tx_top(clk,rst_n,tx,key_in0,led);
 	uart_byte_tx uart_byte_tx(
 		.clk(clk),
 		.rst_n(rst_n),
-		.data_byte(data_byte),
-		.send_en(send_en),
-		.baud_set(3'd0),
+		.i_TXD_Din(data_byte),
+		.i_TXD_En(send_en),
+		.i_TXD_Baud(3'd0),
 		
-		.tx(tx),
-		.tx_done(tx_done),
-		.uart_state(led)
+		.o_TXD_Tx(tx),
+		.o_TXD_Done(tx_done),
+		.o_TXD_State(led)
 	);
 	
 	key_filter key_filter0(
 		.clk(clk),
 		.rst_n(rst_n),
-		.key_in(key_in0),
-		.key_flag(key_flag0),
-		.key_state(key_state0)
+		.i_Key(key_in0),
+		.o_KEY_flag(key_flag0),
+		.o_KEY_State(key_state0)
 	);
 
 	str_ctrl u_str_ctrl(
